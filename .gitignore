@@ -14,3 +14,5 @@ nbproject
 .eprj
 .sass-cache
 .idea
+/bin
+/vendor/gems
