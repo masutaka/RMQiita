@@ -4,17 +4,14 @@ class EntriesController < UITableViewController
   def viewDidLoad
     super
     @tag = 'RubyMotion'
-    self.title = @tag # ナビゲーションバーのタイトルを変更
-    @entries = [] # 取得したエントリをこのインスタンス変数に格納
-    url = "https://qiita.com/api/v1/tags/#{@tag}/items"
-    # 前回に引き続き BubbleWrap を使う
-    BW::HTTP.get(url) do |response|
-      if response.ok?
-        json = BW::JSON.parse(response.body.to_s)
-        @entries = json
-        self.tableView.reloadData # テーブルをリロード
+    self.title = @tag
+    @entries = []
+    Qiita::Client.fetch_tagged_items(@tag) do |items, error_message|
+      if error_message.nil?
+        @entries = items
+        self.tableView.reloadData
       else
-        p response.error_message
+        p error_message
       end
     end
   end
@@ -30,15 +27,13 @@ class EntriesController < UITableViewController
       cell = UITableViewCell.alloc.initWithStyle(UITableViewCellStyleSubtitle, reuseIdentifier:ENTRY_CELL_ID)
     end
     entry = @entries[indexPath.row]
-    # ラベルをセット
-    cell.textLabel.text = entry['title']
-    cell.detailTextLabel.text = "#{entry['updated_at_in_words']} by #{entry['user']['url_name']}"
+    cell.textLabel.text = entry.title
+    cell.detailTextLabel.text = "#{entry.updated_at} by #{entry.username}"
     cell
   end
   def tableView(tableView, didSelectRowAtIndexPath:indexPath)
     entry = @entries[indexPath.row]
-    body = entry['body']
-    # UIWebView を貼り付けたビューコントローラを作成
+    # UIWebView を貼付けた ビューコントローラを作成
     controller = UIViewController.new
     webview = UIWebView.new
     webview.frame = controller.view.frame # webview の表示サイズを調整
@@ -46,6 +41,6 @@ class EntriesController < UITableViewController
     # 画面遷移
     navigationController.pushViewController(controller, animated:true)
     # HTML を読み込む
-    webview.loadHTMLString(body, baseURL:nil)
+    webview.loadHTMLString(entry.body, baseURL:nil)
   end
 end
